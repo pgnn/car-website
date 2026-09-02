@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: car-website
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: car-website
+  template:
+    metadata:
+      labels:
+        app: car-website
+    spec:
+      containers:
+        - name: car-website
+          image: <+artifact.metadata.image>
+          ports:
+            - containerPort: 3000
+          env:
+            - name: CAR_VERSION
+              value: "<+stage.variables.carVersion>"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: car-website
+spec:
+  selector:
+    app: car-website
+  ports:
+    - port: 80
+      targetPort: 3000
+  type: ClusterIP
