@@ -1,2 +1,2 @@
 image: <+artifacts.primary.image>
-imageTag: <+stage.variables.imageTag>
+imageTag: <+pipeline.stages.Build.variables.imageTag>
