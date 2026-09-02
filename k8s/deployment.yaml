@@ -14,12 +14,12 @@ spec:
     spec:
       containers:
         - name: car-website
-          image: <+artifact.image>
+          image: "{{ .Values.image }}"
           ports:
             - containerPort: 3000
           env:
             - name: CAR_VERSION
-              value: "<+stage.variables.carVersion>"
+              value: "{{ .Values.imageTag }}"
 ---
 apiVersion: v1
 kind: Service

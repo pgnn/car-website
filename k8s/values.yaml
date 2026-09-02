@@ -1,0 +1,2 @@
+image: <+artifacts.primary.image>
+imageTag: <+stage.variables.imageTag>
