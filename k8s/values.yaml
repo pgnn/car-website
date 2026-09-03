@@ -1,2 +1,2 @@
 image: <+artifacts.primary.image>
-imageTag: <+pipeline.stages.Build.variables.imageTag>
+imageTag: <+pipeline.sequenceId>
