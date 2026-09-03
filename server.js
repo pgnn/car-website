@@ -5,9 +5,9 @@ const PORT = process.env.PORT || 3000;
 const VERSION = process.env.CAR_VERSION || 'v1';
 
 const cars = [
-  { name: 'StuCar Roadster', price: '$38,000', tagline: 'Sharp, quick, city-ready' },
-  { name: 'StuCar GT', price: '$106,000', tagline: 'The one that turns heads' },
-  { name: 'StuCar Hatch', price: '$31,000', tagline: 'Everyday practical, still fun' },
+  { name: 'StuCar Roadster', unique: '0-60 in 4.2s with revolutionary electric drivetrain', tagline: 'Sharp, quick, city-ready' },
+  { name: 'StuCar GT', unique: 'Twin-turbo V8 with active aerodynamics', tagline: 'The one that turns heads' },
+  { name: 'StuCar Hatch', unique: 'Spacious interior with advanced safety features', tagline: 'Everyday practical, still fun' },
 ];
 
 app.get('/', (req, res) => {
@@ -18,8 +18,8 @@ app.get('/', (req, res) => {
         <div class="badge">StuCar</div>
         <h2>${c.name}</h2>
         <p class="tagline">${c.tagline}</p>
-        <p class="price">${c.price}</p>
-        <button>Enquire</button>
+        <p class="unique">${c.unique}</p>
+        <button>More Information</button>
       </div>`
     )
     .join('');
@@ -94,9 +94,10 @@ app.get('/', (req, res) => {
             font-size: 0.85rem;
             margin: 0 0 14px;
           }
-          .price {
-            font-size: 1.4rem;
-            font-weight: 700;
+          .unique {
+            font-size: 0.9rem;
+            color: #e63946;
+            font-weight: 600;
             margin: 0 0 16px;
           }
           button {

@@ -6,6 +6,9 @@ describe('Car Shop', () => {
     const res = await request(app).get('/');
     expect(res.statusCode).toBe(200);
     expect(res.text).toContain('StuCar Roadster');
+    expect(res.text).toContain('More Information');
+    expect(res.text).not.toContain('price');
+    expect(res.text).toContain('0-60 in 4.2s with revolutionary electric drivetrain');
   });
 
   it('GET /health returns ok', async () => {
