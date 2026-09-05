@@ -295,12 +295,20 @@ app.get('/', (req, res) => {
                 pin.className = 'taxi-pin';
                 pin.title = taxi.id;
 
-                // Map coordinates to percentages (x,y are 0-1000)
-                const x = (taxi.x / 1000) * 100;
-                const y = (taxi.y / 1000) * 100;
+                // Support both x,y (0-1000) and lat,lng formats
+                let x, y;
+                if (taxi.x !== undefined && taxi.y !== undefined) {
+                  // New format: x,y are 0-1000
+                  x = (taxi.x / 1000) * 100;
+                  y = (taxi.y / 1000) * 100;
+                } else {
+                  // Old format: lat,lng - map to percentage (Berlin area: ~52.5, ~13.4)
+                  x = ((taxi.lng - 13.3) / 0.2) * 100;
+                  y = ((52.6 - taxi.lat) / 0.15) * 100;
+                }
 
-                pin.style.left = x + '%';
-                pin.style.top = y + '%';
+                pin.style.left = Math.max(0, Math.min(100, x)) + '%';
+                pin.style.top = Math.max(0, Math.min(100, y)) + '%';
                 pin.style.transform = 'translate(-50%, -50%)';
 
                 pins.appendChild(pin);
