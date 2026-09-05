@@ -3,3 +3,4 @@ node_modules/
 last_updated.log
 manifest_remediation_results.yaml
 .claude/
+.devin/
