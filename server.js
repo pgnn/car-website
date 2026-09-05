@@ -326,14 +326,41 @@ app.get('/health', (req, res) => res.status(200).json({ status: 'ok', version: V
 
 app.get('/api/cars', (req, res) => res.json(cars));
 
-app.get('/api/taxis', async (req, res) => {
-  try {
-    const response = await fetch('https://infra-demo-pn.s3.eu-central-1.amazonaws.com/taxis.json');
-    const taxis = await response.json();
-    res.json(taxis);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch taxis' });
-  }
+const taxis = [
+  { "id": "TX001", "x": 120, "y": 150 },
+  { "id": "TX002", "x": 450, "y": 200 },
+  { "id": "TX003", "x": 780, "y": 320 },
+  { "id": "TX004", "x": 200, "y": 400 },
+  { "id": "TX005", "x": 650, "y": 250 },
+  { "id": "TX006", "x": 350, "y": 500 },
+  { "id": "TX007", "x": 900, "y": 150 },
+  { "id": "TX008", "x": 100, "y": 700 },
+  { "id": "TX009", "x": 550, "y": 600 },
+  { "id": "TX010", "x": 750, "y": 450 },
+  { "id": "TX011", "x": 300, "y": 250 },
+  { "id": "TX012", "x": 850, "y": 700 },
+  { "id": "TX013", "x": 450, "y": 750 },
+  { "id": "TX014", "x": 200, "y": 850 },
+  { "id": "TX015", "x": 680, "y": 800 },
+  { "id": "TX016", "x": 950, "y": 500 },
+  { "id": "TX017", "x": 100, "y": 300 },
+  { "id": "TX018", "x": 600, "y": 100 },
+  { "id": "TX019", "x": 380, "y": 650 },
+  { "id": "TX020", "x": 750, "y": 200 },
+  { "id": "TX021", "x": 520, "y": 400 },
+  { "id": "TX022", "x": 880, "y": 350 },
+  { "id": "TX023", "x": 200, "y": 600 },
+  { "id": "TX024", "x": 700, "y": 550 },
+  { "id": "TX025", "x": 420, "y": 900 },
+  { "id": "TX026", "x": 300, "y": 100 },
+  { "id": "TX027", "x": 800, "y": 600 },
+  { "id": "TX028", "x": 150, "y": 500 },
+  { "id": "TX029", "x": 600, "y": 850 },
+  { "id": "TX030", "x": 900, "y": 750 }
+];
+
+app.get('/api/taxis', (req, res) => {
+  res.json(taxis);
 });
 
 if (require.main === module) {
