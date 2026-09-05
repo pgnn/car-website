@@ -1,0 +1,80 @@
+execution_url: "https://app.harness.io/ng/#/account/EeRjnXTnS4GrLG5VNNJZUw/cd/orgs/sandbox/projects/Phuong_Sandbox_v2/pipelines/Kubernetes_Remediation/executions/ngmSQlrcS1mm43h8wl3-qA/pipeline"
+
+analysis:
+  failed_stage: "CI Agent"
+  failed_step: "Kubernetes Deployment"
+  failed_step_type: "K8sRollingDeploy"
+  failure_type: "ConfigMap not found / Invalid image tag"
+  root_cause: >
+    Two issues found in the Kubernetes manifests:
+    1. The Deployment references a non-existent ConfigMap 'car-website-config-that-does-not-exist'
+       as a volume, which causes pod scheduling failure (CreateContainerConfigError).
+    2. The values.yaml has a hardcoded invalid imageTag 'does-not-exist-12345' instead of
+       the Harness expression '<+pipeline.sequenceId>', which causes ImagePullBackOff.
+  confidence: "high"
+  evidence:
+    - "k8s/deployment.yaml: configMap name set to 'car-website-config-that-does-not-exist'"
+    - "k8s/values.yaml: imageTag hardcoded to 'does-not-exist-12345' instead of '<+pipeline.sequenceId>'"
+    - "git log shows commit b2e9793: 'test: reference missing ConfigMap to trigger remediation agent demo'"
+    - "git log shows commit 7672865: 'test: break image tag to trigger remediation agent demo'"
+
+correlated_files:
+  - file: "k8s/deployment.yaml"
+    reason: "Contains the Deployment spec with a volume referencing a non-existent ConfigMap"
+  - file: "k8s/values.yaml"
+    reason: "Contains the image and imageTag values used by the Deployment template"
+
+changes_applied:
+  - file: "k8s/deployment.yaml"
+    change: "Removed volumeMount and volume referencing non-existent ConfigMap"
+    before: |
+      volumeMounts:
+        - name: app-config
+          mountPath: /config
+      volumes:
+        - name: app-config
+          configMap:
+            name: car-website-config-that-does-not-exist
+    after: |
+      (volume and volumeMount sections removed entirely)
+    rationale: >
+      The ConfigMap 'car-website-config-that-does-not-exist' does not exist in the cluster
+      or in the manifests. Referencing it causes CreateContainerConfigError. The volume was
+      added in commit b2e9793 as a test break. Removing it restores the working state.
+
+  - file: "k8s/values.yaml"
+    change: "Restored imageTag to Harness expression"
+    before: |
+      # image: <+artifacts.primary.image>
+      # imageTag: <+pipeline.sequenceId>
+
+      image: <+artifacts.primary.image>
+      imageTag: does-not-exist-12345
+    after: |
+      image: <+artifacts.primary.image>
+      imageTag: <+pipeline.sequenceId>
+    rationale: >
+      The imageTag was changed from the Harness expression '<+pipeline.sequenceId>' to the
+      hardcoded invalid value 'does-not-exist-12345' in commit 7672865. This causes
+      ImagePullBackOff because no image with that tag exists. Restoring the expression
+      allows Harness to resolve the correct tag at runtime.
+
+validation:
+  commands_run:
+    - "git diff"
+    - "python3 YAML syntax validation on deployment.yaml"
+    - "python3 YAML syntax validation on values.yaml"
+  results:
+    - "deployment.yaml: valid YAML - volumeMount and volume removed cleanly"
+    - "values.yaml: valid YAML - imageTag restored to Harness expression"
+    - "Changes match the known-good state from before commits 7672865 and b2e9793"
+
+pull_request:
+  created: true
+  url: "https://github.com/pgnn/car-website/pull/6"
+  branch: "harness/manifest-remediation"
+
+next_steps:
+  - "Review and merge the pull request to restore working Kubernetes manifests"
+  - "Re-run the Kubernetes_Remediation pipeline after merge to verify deployment succeeds"
+  - "If a ConfigMap volume is actually needed, create the ConfigMap resource in the manifests and re-add the volume with the correct name"
