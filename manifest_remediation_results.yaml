@@ -71,7 +71,7 @@ validation:
 
 pull_request:
   created: true
-  url: ""
+  url: "https://github.com/pgnn/car-website/pull/6"
   branch: "harness/manifest-remediation"
 
 next_steps:
