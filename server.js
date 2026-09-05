@@ -1,8 +1,11 @@
 const express = require('express');
+const path = require('path');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
 const VERSION = process.env.CAR_VERSION || 'v1';
+
+app.use(express.static(path.join(__dirname)));
 
 const cars = [
   { name: 'InnoCar Model 1', unique: 'Three rows of seating with all-terrain traction control', tagline: 'Room for the whole crew', image: '/images/suv.jpg' },
@@ -205,10 +208,9 @@ app.get('/', (req, res) => {
             width: 100%;
             height: 100%;
             position: relative;
-            background: linear-gradient(45deg, #2a2a2c 25%, transparent 25%, transparent 75%, #2a2a2c 75%, #2a2a2c),
-                        linear-gradient(45deg, #2a2a2c 25%, transparent 25%, transparent 75%, #2a2a2c 75%, #2a2a2c);
-            background-size: 40px 40px;
-            background-position: 0 0, 20px 20px;
+            background-image: url('/map.jpeg');
+            background-size: cover;
+            background-position: center;
             background-color: #17181a;
             overflow: hidden;
           }
@@ -216,9 +218,7 @@ app.get('/', (req, res) => {
             position: absolute;
             width: 100%;
             height: 100%;
-            background-image:
-              repeating-linear-gradient(0deg, transparent, transparent 39px, #444 39px, #444 40px),
-              repeating-linear-gradient(90deg, transparent, transparent 39px, #444 39px, #444 40px);
+            background: none;
           }
           .taxi-pins {
             position: absolute;
