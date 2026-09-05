@@ -1,5 +1,2 @@
-# image: <+artifacts.primary.image>
-# imageTag: <+pipeline.sequenceId>
-
 image: <+artifacts.primary.image>
-imageTag: does-not-exist-12345
+imageTag: <+pipeline.sequenceId>
