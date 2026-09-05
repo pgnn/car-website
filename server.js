@@ -253,8 +253,8 @@ app.get('/', (req, res) => {
         <div class="grid">${cards}</div>
         <div class="fleet-section">
           <div class="fleet-header">
-            <h2>Berlin Autonomous Taxi Fleet</h2>
-            <p>Real-time taxi locations across Berlin</p>
+            <h2>Frankfurt Autonomous Taxi Fleet</h2>
+            <p>Real-time taxi locations across Frankfurt</p>
           </div>
           <div class="fleet-stats">
             <div class="stat">
@@ -262,7 +262,7 @@ app.get('/', (req, res) => {
               <p class="stat-label">Available Taxis</p>
             </div>
             <div class="stat">
-              <p class="stat-value">Berlin</p>
+              <p class="stat-value">Frankfurt</p>
               <p class="stat-label">Service City</p>
             </div>
           </div>
