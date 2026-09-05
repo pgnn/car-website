@@ -1,0 +1,86 @@
+execution_url: "https://app.harness.io/ng/#/account/EeRjnXTnS4GrLG5VNNJZUw/ci/orgs/sandbox/projects/Phuong_Sandbox_v2/pipelines/Kubernetes_Remediation/executions/M09B2TF1Qz2uf4AUa-XOPg/pipeline"
+
+analysis:
+  failed_stage: "Deploy"
+  failed_step: "Stage Deployment (K8sBlueGreenDeploy)"
+  failed_step_type: "K8sBlueGreenDeploy"
+  failure_type: "ConfigMap not found"
+  root_cause: >
+    The Deployment manifest references a ConfigMap named
+    'car-website-config-that-does-not-exist' as a volume source. This ConfigMap
+    does not exist in the target namespace. When Kubernetes attempts to schedule
+    the pod, it cannot mount the volume, causing the pod to remain in a
+    Pending/CreateContainerConfigError state and the rollout to fail. The
+    application code (server.js) does not read from /config, confirming the
+    volume mount is unnecessary.
+  confidence: "high"
+  evidence:
+    - "k8s/deployment.yaml references configMap named 'car-website-config-that-does-not-exist'"
+    - "No ConfigMap resource defined in the k8s/ directory"
+    - "Application Dockerfile and server.js do not use /config mount path"
+    - "Harness service 'CarApp' uses k8s/deployment.yaml with k8s/values.yaml as K8sManifest"
+    - "Pipeline 'car-website-pipeline' Deploy stage uses K8sBlueGreenDeploy step"
+    - "Previous executions (Z78Vj9ZUTZKoskst8G7aKQ, dF4TyDFLSlu1miYl-IhwTQ) failed in Deploy stage"
+
+correlated_files:
+  - file: "k8s/deployment.yaml"
+    reason: "Contains the Deployment and Service manifests used by Harness CD. The Deployment referenced a non-existent ConfigMap volume."
+  - file: "k8s/values.yaml"
+    reason: "Harness values file providing image and imageTag for the deployment template."
+  - file: "Dockerfile"
+    reason: "Confirms the application exposes port 3000 and does not require a /config volume mount."
+  - file: "server.js"
+    reason: "Application entry point confirms no file reads from /config directory."
+
+changes_applied:
+  - file: "k8s/deployment.yaml"
+    change: "Removed volumeMounts and volumes referencing non-existent ConfigMap 'car-website-config-that-does-not-exist'"
+    before: |
+      containers:
+        - name: car-website
+          image: "{{ .Values.image }}"
+          ports:
+            - containerPort: 3000
+          env:
+            - name: CAR_VERSION
+              value: "{{ .Values.imageTag }}"
+          volumeMounts:
+            - name: app-config
+              mountPath: /config
+      volumes:
+        - name: app-config
+          configMap:
+            name: car-website-config-that-does-not-exist
+    after: |
+      containers:
+        - name: car-website
+          image: "{{ .Values.image }}"
+          ports:
+            - containerPort: 3000
+          env:
+            - name: CAR_VERSION
+              value: "{{ .Values.imageTag }}"
+    rationale: >
+      The ConfigMap 'car-website-config-that-does-not-exist' does not exist and
+      is not defined anywhere in the repository. The application does not read
+      from /config. Removing the volume and volumeMount eliminates the pod
+      scheduling failure without affecting application behavior.
+
+validation:
+  commands_run:
+    - "git diff"
+    - "python3 -c \"import yaml; yaml.safe_load(...)\" (YAML syntax validation)"
+  results:
+    - "Diff shows clean removal of 7 lines (volumeMounts and volumes blocks)"
+    - "YAML syntax validation passed for both Deployment and Service documents"
+
+pull_request:
+  created: true
+  url: ""
+  branch: "harness/manifest-remediation-M09B2TF1"
+
+next_steps:
+  - "Merge the pull request after review"
+  - "Re-run the car-website-pipeline to verify the Deploy stage succeeds past the K8s manifest application"
+  - "Consider fixing the Policy_1 step which references SAST output variables from a step that only runs on failure (stageStatus: Failure)"
+  - "If a ConfigMap is needed in the future, create the ConfigMap resource in k8s/deployment.yaml before referencing it as a volume"

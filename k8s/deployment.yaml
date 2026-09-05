@@ -20,13 +20,6 @@ spec:
           env:
             - name: CAR_VERSION
               value: "{{ .Values.imageTag }}"
-          volumeMounts:
-            - name: app-config
-              mountPath: /config
-      volumes:
-        - name: app-config
-          configMap:
-            name: car-website-config-that-does-not-exist
 ---
 apiVersion: v1
 kind: Service
