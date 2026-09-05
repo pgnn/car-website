@@ -295,12 +295,12 @@ app.get('/', (req, res) => {
                 pin.className = 'taxi-pin';
                 pin.title = taxi.id;
 
-                // Map coordinates to percentages
-                const x = ((taxi.lng - 1330) / 0.3) - 30;
-                const y = ((5260 - taxi.lat) / 0.15) - 200;
+                // Map coordinates to percentages (x,y are 0-1000)
+                const x = (taxi.x / 1000) * 100;
+                const y = (taxi.y / 1000) * 100;
 
-                pin.style.left = Math.max(0, Math.min(100, x)) + '%';
-                pin.style.top = Math.max(0, Math.min(100, y)) + '%';
+                pin.style.left = x + '%';
+                pin.style.top = y + '%';
                 pin.style.transform = 'translate(-50%, -50%)';
 
                 pins.appendChild(pin);
