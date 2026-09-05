@@ -8,6 +8,9 @@ const cars = [
   { name: 'StuCar Roadster', unique: '0-60 in 4.2s with revolutionary electric drivetrain', tagline: 'Sharp, quick, city-ready' },
   { name: 'StuCar GT', unique: 'Twin-turbo V8 with active aerodynamics', tagline: 'The one that turns heads' },
   { name: 'StuCar Hatch', unique: 'Spacious interior with advanced safety features', tagline: 'Everyday practical, still fun' },
+  { name: 'StuCar SUV', unique: 'Three rows of seating with all-terrain traction control', tagline: 'Room for the whole crew', image: '/images/suv.jpg' },
+  { name: 'StuCar Pickup', unique: '2-ton towing capacity with reinforced steel bed', tagline: 'Built for the job site', image: '/images/pickup.jpg' },
+  { name: 'StuCar Convertible', unique: 'Retractable hardtop in under 12 seconds', tagline: 'Top down, every weekend', image: '/images/convertible.jpg' },
 ];
 
 app.get('/', (req, res) => {
@@ -16,6 +19,7 @@ app.get('/', (req, res) => {
       (c) => `
       <div class="card">
         <div class="badge">StuCar</div>
+        ${c.image ? `<img src="${c.image}" width="300" height="180" alt="${c.name}">` : ''}
         <h2>${c.name}</h2>
         <p class="tagline">${c.tagline}</p>
         <p class="unique">${c.unique}</p>
