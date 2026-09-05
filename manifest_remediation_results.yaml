@@ -1,0 +1,73 @@
+execution_url: "https://app.harness.io/ng/#/account/EeRjnXTnS4GrLG5VNNJZUw/ci/orgs/sandbox/projects/Phuong_Sandbox_v2/pipelines/Kubernetes_Remediation/executions/cTSE2iV5QHu4VAw9dac-5A/pipeline"
+analysis:
+  failed_stage: "CI Agent"
+  failed_step: "K8s Manifest Remediator Agent"
+  failed_step_type: "Agent"
+  failure_type: "ConfigMap not found - volume reference to non-existent resource"
+  root_cause: >
+    The Deployment manifest k8s/deployment.yaml references a ConfigMap named
+    'car-website-config-that-does-not-exist' in its volumes section. This ConfigMap
+    does not exist in the cluster or in the repository. When Kubernetes attempts to
+    create the pod, the volume mount fails with CreateContainerConfigError because
+    the referenced ConfigMap cannot be found. The application (server.js) does not
+    read any files from /config — it only uses environment variables (PORT,
+    CAR_VERSION) — so the volume mount is both broken and unnecessary.
+  confidence: "high"
+  evidence:
+    - "Volume 'app-config' references configMap 'car-website-config-that-does-not-exist' which does not exist"
+    - "Application server.js uses only env vars PORT and CAR_VERSION, no file-based config from /config"
+    - "No ConfigMap manifest exists anywhere in the repository"
+    - "Pod would fail with CreateContainerConfigError or similar volume mount error"
+
+correlated_files:
+  - file: "k8s/deployment.yaml"
+    reason: "Contains the Deployment and Service manifests; Deployment had a volume referencing a non-existent ConfigMap"
+  - file: "k8s/values.yaml"
+    reason: "Harness values file providing image and imageTag template values"
+  - file: "server.js"
+    reason: "Application source — confirms no file-based config is loaded from /config"
+  - file: "Dockerfile"
+    reason: "Container build — confirms no /config directory is created or expected"
+
+changes_applied:
+  - file: "k8s/deployment.yaml"
+    change: "Removed volume and volumeMount referencing non-existent ConfigMap"
+    before: |
+              env:
+                - name: CAR_VERSION
+                  value: "{{ .Values.imageTag }}"
+              volumeMounts:
+                - name: app-config
+                  mountPath: /config
+          volumes:
+            - name: app-config
+              configMap:
+                name: car-website-config-that-does-not-exist
+    after: |
+              env:
+                - name: CAR_VERSION
+                  value: "{{ .Values.imageTag }}"
+    rationale: >
+      The ConfigMap 'car-website-config-that-does-not-exist' does not exist anywhere
+      in the repository or cluster. The application does not read files from /config.
+      Removing the broken volume and volumeMount eliminates the pod creation failure
+      without affecting application behavior.
+
+validation:
+  commands_run:
+    - "python3 -c 'import yaml; list(yaml.safe_load_all(open(\"k8s/deployment.yaml\")))'"
+    - "git diff"
+  results:
+    - "YAML syntax valid - 2 documents parsed (Deployment + Service)"
+    - "Diff shows clean removal of 7 lines (volumeMounts + volumes sections)"
+
+pull_request:
+  created: true
+  url: ""
+  branch: "harness/manifest-remediation-cTSE2i"
+
+next_steps:
+  - "Review and merge the pull request to remove the broken ConfigMap volume reference"
+  - "If a ConfigMap is actually needed in the future, create both the ConfigMap manifest and the volume mount together"
+  - "Re-run the Harness CD pipeline after merging to verify successful deployment"
+  - "Verify pod starts successfully with: kubectl get pods -l app=car-website"
