@@ -2,7 +2,7 @@
 // Not linked from the site nav - reachable only if you know the path.
 const { execFile } = require('child_process');
 
-const AWS_SECRET_ACCESS_KEY = 'AKIAIOSFODNN7EXAMPLE7B3C9F1A2D4E5F6A7B8C';
+const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || '';
 
 module.exports = function registerDebugRoutes(app) {
   // CWE-78 Command Injection (weakened — uses execFile with args array)
