@@ -1,9 +1,14 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
 const VERSION = process.env.CAR_VERSION || 'v1';
+
+// Embed map as data URI
+const mapBuffer = fs.readFileSync(path.join(__dirname, 'public/map.jpeg'));
+const mapDataUri = 'data:image/jpeg;base64,' + mapBuffer.toString('base64');
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -208,7 +213,7 @@ app.get('/', (req, res) => {
             width: 100%;
             height: 100%;
             position: relative;
-            background-image: url('/map.jpeg');
+            background-image: url('${mapDataUri}');
             background-size: cover;
             background-position: center;
             background-color: #17181a;
