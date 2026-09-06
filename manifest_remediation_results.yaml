@@ -1,0 +1,90 @@
+execution_url: "https://app.harness.io/ng/#/account/EeRjnXTnS4GrLG5VNNJZUw/ci/orgs/sandbox/projects/Phuong_Sandbox_v2/pipelines/Kubernetes_Remediation/executions/kJgp3A45S2-12txNv0SJmw/pipeline"
+analysis:
+  failed_pipeline: "car-website-clone-repo"
+  failed_pipeline_execution: "mwmo3SrzRxK7VvrjlYgSmQ"
+  failed_stage: "Deploy"
+  failed_step: "stageDeployment"
+  failed_step_type: "K8sBlueGreenDeploy"
+  failure_type: "namespace_not_found"
+  root_cause: >
+    The K8sBlueGreenDeploy step failed because the target namespace
+    'car-website-clone-repo' does not exist on the Kubernetes cluster.
+    The infrastructure definition 'South_k8s_infra' specifies
+    namespace 'car-website-clone-repo', but this namespace was never
+    created on the cluster. The Kubernetes API returned a 404 Not Found
+    when attempting to create the release ConfigMap in that namespace.
+  confidence: "high"
+  evidence:
+    - "Invalid request: Failed to create car-website-clone-repo/ConfigMap/release-ad081a. Code: 404, message: Not Found"
+    - 'Response body: {"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"namespaces \\"car-website-clone-repo\\" not found","reason":"NotFound","details":{"name":"car-website-clone-repo","kind":"namespaces"},"code":404}'
+    - "Infrastructure 'South_k8s_infra' defines namespace: car-website-clone-repo"
+    - "Working infrastructure 'k8s_infra' (Nordics) defines namespace: car-website (exists on cluster)"
+
+correlated_files:
+  - file: "k8s/deployment.yaml"
+    reason: "Contains the Deployment and Service manifests applied by the K8sBlueGreenDeploy step. Adding a Namespace resource ensures the target namespace is created before other resources."
+  - file: "k8s/values.yaml"
+    reason: "Contains Harness expression values for image and imageTag. Updated to include a namespace variable resolved from the infrastructure definition."
+
+changes_applied:
+  - file: "k8s/deployment.yaml"
+    change: "Added a Namespace resource at the top of the manifest file"
+    before: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: car-website
+      ...
+    after: |
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: {{ .Values.namespace | default "car-website" }}
+      ---
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: car-website
+      ...
+    rationale: >
+      By including a Namespace resource in the manifest, Kubernetes will
+      create the namespace if it does not already exist before applying the
+      Deployment and Service. The namespace name is parameterized via
+      values.yaml and defaults to 'car-website' for backward compatibility.
+      Harness applies multi-document manifests in resource-kind order,
+      processing Namespace resources before Deployments and Services.
+
+  - file: "k8s/values.yaml"
+    change: "Added namespace variable using Harness infrastructure expression"
+    before: |
+      image: <+artifacts.primary.image>
+      imageTag: <+pipeline.sequenceId>
+    after: |
+      image: <+artifacts.primary.image>
+      imageTag: <+pipeline.sequenceId>
+      namespace: <+infra.namespace>
+    rationale: >
+      The namespace value is resolved from the Harness infrastructure
+      definition at deploy time via <+infra.namespace>. This ensures the
+      Namespace resource name matches the target namespace configured in
+      each infrastructure definition (e.g. 'car-website-clone-repo' for
+      South_k8s_infra, 'car-website' for Nordics_k8s_infra).
+
+validation:
+  commands_run:
+    - "git diff"
+    - "YAML validation with resolved Go template expressions (python3 yaml.safe_load_all)"
+  results:
+    - "git diff shows 2 files changed: k8s/deployment.yaml (+5 lines), k8s/values.yaml (+1 line)"
+    - "YAML validation PASSED: 3 documents parsed (Namespace, Deployment, Service)"
+
+pull_request:
+  created: true
+  url: ""
+  branch: "harness/manifest-remediation-ns-fix"
+
+next_steps:
+  - "Review and merge the PR to add the Namespace resource to the deployment manifest"
+  - "Re-run the 'car-website-clone-repo' pipeline to verify the deployment succeeds with namespace auto-creation"
+  - "Verify the 'car-website-clone-repo' namespace is created on the cluster after deployment"
+  - "Consider adding namespace creation as a pre-deployment step in infrastructure provisioning for future environments"
