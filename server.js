@@ -6,9 +6,20 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const VERSION = process.env.CAR_VERSION || 'v1';
 
-// Embed map image
-const mapB64 = fs.readFileSync(path.join(__dirname, 'public/map.jpeg')).toString('base64');
-const MAP_DATA_URI = `data:image/jpeg;base64,${mapB64}`;
+// Load map image
+let MAP_DATA_URI = '';
+try {
+  const mapPath = path.join(__dirname, 'public/map.jpeg');
+  if (fs.existsSync(mapPath)) {
+    const mapBuffer = fs.readFileSync(mapPath);
+    MAP_DATA_URI = `data:image/jpeg;base64,${mapBuffer.toString('base64')}`;
+    console.log(`✅ Map loaded: ${(mapBuffer.length / 1024).toFixed(2)}KB`);
+  } else {
+    console.warn(`⚠️ Map file not found at ${mapPath}`);
+  }
+} catch (err) {
+  console.error(`❌ Error loading map: ${err.message}`);
+}
 
 app.use(express.static(path.join(__dirname, 'public')));
 
