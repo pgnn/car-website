@@ -5,7 +5,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const VERSION = process.env.CAR_VERSION || 'v1';
 
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, 'public')));
 
 const cars = [
   { name: 'InnoCar Model 1', unique: 'Three rows of seating with all-terrain traction control', tagline: 'Room for the whole crew', image: '/images/suv.jpg' },
