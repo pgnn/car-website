@@ -100,7 +100,7 @@ validation:
 
 pull_request:
   created: true
-  url: "<to be filled after PR creation>"
+  url: "https://github.com/pgnn/car-website/pull/18"
   branch: "harness/manifest-remediation-svc-fix"
 
 next_steps:
