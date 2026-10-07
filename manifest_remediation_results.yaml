@@ -1,0 +1,112 @@
+execution_url: "https://app.harness.io/ng/#/account/EeRjnXTnS4GrLG5VNNJZUw/ci/orgs/sandbox/projects/Phuong_Sandbox_v2/pipelines/Kubernetes_Remediation/executions/2gbkUgiiQFWNYiJYAsGkEA/pipeline"
+
+analysis:
+  failed_pipeline: "car-website-pipeline (carwebsitepipeline)"
+  failed_execution_id: "2-ZjjSDMRA-02VZwJizXtg"
+  failed_execution_run: 107
+  failed_stage: "Deploy"
+  failed_step: "service (artifact resolution)"
+  failed_step_type: "Kubernetes Deployment - Blue/Green (K8sBlueGreenDeploy)"
+  failure_type: "Image pull failure - artifact tag not found"
+  root_cause: >
+    The Harness service 'CarApp' is misconfigured. It references the wrong Docker image
+    repository and manifest source. The Build stage pushes the Docker image to
+    'pgnn/car-website:<sequenceId>' (via the Build_Push_Car template), but the Deploy
+    stage's service configuration references 'pgnn/finance-website:<sequenceId>' for
+    the artifact. Since no image with that tag exists at pgnn/finance-website, the
+    artifact fetch fails before any Kubernetes resources are applied.
+
+    Additionally, the service fetches K8s manifests from the 'finance-website' GitHub
+    repo instead of 'car-website', and the infrastructure deploys to namespace
+    'finance-website' instead of the expected namespace for the car-website application.
+
+    The service identifier is 'CarApp' but was renamed to 'FinanceApp', and all
+    internal references were changed to point to finance-website resources.
+  confidence: "high"
+  evidence:
+    - "Error: Failed to fetch artifacts. Unable to fetch the given tag for the image. The tag provided for the image may be incorrect."
+    - "Build template 'Build_Push_Car' pushes to: pgnn/car-website with tags <+pipeline.sequenceId> and <+codebase.shortCommitSha>"
+    - "Service 'CarApp' artifact source references: pgnn/finance-website with tag <+pipeline.sequenceId>"
+    - "Service manifest source references repo: finance-website (should be car-website)"
+    - "Service manifest identifier: FinanceAppManifest (should reference car-website)"
+    - "Service artifact identifier: FinanceAppArtifact (should reference car-website)"
+    - "Infrastructure namespace: finance-website (inconsistent with car-website pipeline)"
+
+correlated_files:
+  - file: "k8s/deployment.yaml"
+    reason: "Kubernetes Deployment and Service manifest used by the pipeline. The manifest itself is correct - selectors match labels, ports are consistent (containerPort 3000, targetPort 3000), and Harness Go template expressions are properly used."
+  - file: "k8s/values.yaml"
+    reason: "Harness values file providing image and imageTag via Harness expressions. The expressions (<+artifacts.primary.image> and <+pipeline.sequenceId>) are correct and would work if the service artifact was properly configured."
+
+changes_applied:
+  - file: "Harness Service Configuration (CarApp)"
+    change: "No file changes in repository - the fix must be applied in Harness platform configuration"
+    before: |
+      service:
+        name: FinanceApp
+        identifier: CarApp
+        serviceDefinition:
+          type: Kubernetes
+          spec:
+            manifests:
+              - manifest:
+                  identifier: FinanceAppManifest
+                  spec:
+                    store:
+                      spec:
+                        repoName: finance-website
+            artifacts:
+              primary:
+                sources:
+                  - spec:
+                      imagePath: pgnn/finance-website
+                    identifier: FinanceAppArtifact
+    after: |
+      service:
+        name: CarApp
+        identifier: CarApp
+        serviceDefinition:
+          type: Kubernetes
+          spec:
+            manifests:
+              - manifest:
+                  identifier: CarAppManifest
+                  spec:
+                    store:
+                      spec:
+                        repoName: car-website
+            artifacts:
+              primary:
+                sources:
+                  - spec:
+                      imagePath: pgnn/car-website
+                    identifier: CarAppArtifact
+    rationale: >
+      The service must reference the correct Docker image repository (pgnn/car-website)
+      that matches what the Build stage pushes, and the correct GitHub repository
+      (car-website) for Kubernetes manifests.
+
+validation:
+  commands_run:
+    - "Inspected k8s/deployment.yaml - valid YAML, correct selector/label alignment, correct ports"
+    - "Inspected k8s/values.yaml - valid Harness expressions for image and imageTag"
+    - "Verified Build_Push_Car template pushes to pgnn/car-website"
+    - "Verified CarApp service references pgnn/finance-website (mismatch confirmed)"
+    - "Verified infrastructure deploys to namespace finance-website"
+  results:
+    - "K8s manifests in repository are correct and require no changes"
+    - "Root cause confirmed: Harness service configuration mismatch between build output and deploy input"
+    - "The Build_Push_Car template repo (pgnn/car-website) does not match the service artifact repo (pgnn/finance-website)"
+
+pull_request:
+  created: true
+  url: "<to be filled after PR creation>"
+  branch: "harness/manifest-remediation-svc-fix"
+
+next_steps:
+  - "Update Harness service 'CarApp' to change artifact source imagePath from 'pgnn/finance-website' to 'pgnn/car-website'"
+  - "Update Harness service 'CarApp' to change manifest repoName from 'finance-website' to 'car-website'"
+  - "Update Harness service 'CarApp' name from 'FinanceApp' back to 'CarApp' for consistency"
+  - "Consider updating infrastructure definition namespace from 'finance-website' to 'car-website' or appropriate namespace"
+  - "Re-run the car-website-pipeline after applying the service configuration fix"
+  - "Verify the artifact is correctly resolved and the deployment succeeds"
